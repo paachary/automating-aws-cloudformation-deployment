@@ -55,20 +55,29 @@ git clone https://github.com/paachary/automating-cloudformation-deployment.git
                     Creates network-resources, natgw-resources, ssm-resources, postgres-db-resources, webapp-resources. 
 
 ### Individual Stacks example
-          
+
           The program has options to create the following stacks individually. Description of each of the stack is provided below:
-          
-         #### network-resources
+
+#### network-resources
           Creates a custom VPC and its related resources [subnets, route tables, igw].
          
-         #### natgw-resources
+#### natgw-resources
           Creates a nat gateway in one of the public subnets and an associated route table with a private subnet mapping.
           This stack is dependent on the network-resources stack created above.
           
-         #### ssm-resources 
+#### ssm-resources 
           Creates required ssm parameters for postgres-db-resources and webapp-resouces template to use.
-          There is no dependency on
-         postgres-db-resources   -> Creates an ec2 instance with a postgres db hosted on it in a private subnet.
-         webapp-resources        -> Creates an ec2 instance with a python Flask webapp hosted on it in a public subnet.
+          There is no dependency on any stack.
+          
+#### postgres-db-resources
+          Creates an ec2 instance with a postgres db hosted on it in a private subnet.
+          This stack is dependent on the network-resources stack and ssm-resources stack created above.
+          
+#### webapp-resources 
+          Creates an ec2 instance with a python Flask webapp hosted on it in a public subnet.
+          This stack is dependent on the network-resources stack and ssm-resources stack created above.
+          
+#### Note
+If you choose to create all the above individual stacks in the specified order, then you will have a fully functional web application running on python Flask with postgredb as its datastore.
 
 
