@@ -1,4 +1,4 @@
-#       Example of automating deployment of CloudFormation templates
+#       Example of automating deployment of AWS CloudFormation templates
 
           This example uses pynt, a lightweight python build tool, to execute tasks for creating and deleting CloudFormation templates.
           
