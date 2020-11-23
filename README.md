@@ -51,7 +51,8 @@ git clone https://github.com/paachary/automating-cloudformation-deployment.git
 ### Nested Stack example
 
           #### webapp-nested-resources
-                    This stack creates a fully functional web application running using python Flask with postgresdb as its datastore.
+                    This stack creates a fully functional web application running using python Flask with postgresdb as its datastore. 
+                    The webapplication can be accessed using http://<webapp-instance-public-dns>:8000/ .
                     Creates network-resources, natgw-resources, ssm-resources, postgres-db-resources, webapp-resources. 
 
 ### Individual Stacks example
@@ -74,7 +75,8 @@ git clone https://github.com/paachary/automating-cloudformation-deployment.git
           This stack is dependent on the network-resources stack and ssm-resources stack created above.
           
 #### webapp-resources 
-          Creates an ec2 instance with a python Flask webapp hosted on it in a public subnet.
+          Creates an ec2 instance with a python Flask webapp hosted on it in a public subnet. 
+          The webapplication can be accessed using http://<webapp-instance-public-dns>:8000/
           This stack is dependent on the network-resources stack and ssm-resources stack created above.
           
 #### Note
