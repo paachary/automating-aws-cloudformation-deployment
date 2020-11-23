@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+    A template for creating SSM parameters from a list of common parameters.
+
+Parameters:
+
+    InstanceType:
+        Type: String
+        Description: The instance type for the ec2 host
+        Default: "t2.micro"
+
+    FlaskApp:
+        Type: String
+        Default: microblog.py
+
+    PostgresUser:
+        Type: String
+        Default: employee_usr
+
+    PostgresDb:
+        Type: String
+        Default: employee_db
+
+    PostgresPwd:
+        Type: String
+        Default: employee
+        NoEcho: 'true'
+
+Resources:
+
+  FlaskAppParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      DataType: text
+      Description: Stores the postgres username
+      Name: FlaskApp
+      Type: String
+      Value: !Ref FlaskApp
+
+  UserParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      DataType: text
+      Description: Stores the postgres username
+      Name: PostgresUser
+      Type: String
+      Value: !Ref PostgresUser
+
+  DbNameParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      DataType: text
+      Description: Stores the postgres db name
+      Name: PostgresDb
+      Type: String
+      Value: !Ref PostgresDb
+
+  Ec2InstanceTypeParam:
+    Type: AWS::SSM::Parameter
+    Properties: 
+      DataType: text
+      Description: Stores the ec2 instance type
+      Name: Ec2InstanceType
+      Type: String
+      Value: !Ref InstanceType
+
+  PasswordParam:
+    Type: AWS::SecretsManager::Secret
+    Properties: 
+      Description: Stores the postgres password
+      Name: PostgresPwd
+      SecretString: !Sub '"${PostgresPwd}"'

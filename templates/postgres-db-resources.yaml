@@ -1,0 +1,183 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  A template for creating postgres database on an ec2 instance in a private db subnet.
+
+Parameters:
+  KeyName:
+    Type: String
+    Description: "Name of an existing SSH Keypair to access the instance"
+    MinLength: 1
+
+  InstanceAmiId:
+    Description: An ec2 instance AMI id
+    Type: 'String'
+
+Resources:
+
+  InstanceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref InstanceRole
+
+  Ec2DbInstance:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+        ResourceSignal:
+            Timeout: PT15M
+    Metadata:
+        AWS::CloudFormation::Init:
+            configSets:
+                db_install:
+                    - install_cfn
+                    - software_install
+                    - configure_postgres
+
+            install_cfn:
+                files:
+                    /etc/cfn/cfn-hup.conf:
+                        content: !Sub |
+                            [main]
+                            stack= ${AWS::StackId}
+                            region=${AWS::Region}
+                        group: root
+                        mode: '000400'
+                        owner: root
+                    /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+                        content: !Sub |
+                            [cfn-auto-reloader-hook]
+                            triggers=post.update
+                            path=Resources.EC2Instance.Metadata.AWS::CloudFormation::Init
+                            action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Ec2DbInstance --configsets db_install --region ${AWS::Region}
+                        group: root
+                        mode: '000400'
+                        owner: root
+                services:
+                    sysvinit:
+                        cfn-hup:
+                            enabled: true
+                            ensureRunning: true
+                            files:
+                            - /etc/cfn/cfn-hup.conf
+                            - /etc/cfn/hooks.d/cfn-auto-reloader.conf                        
+
+            software_install:
+                packages:
+                    yum:
+                        python3: []
+                        git: []
+                        postgresql: []
+                        postgresql-server: [] 
+                        postgresql-devel: []
+                        postgresql-contrib: []
+                        postgresql-docs: []
+
+            configure_postgres:
+                files:
+                    /tmp/fix_pg_hba:
+                        content: !Sub |
+                          #!/bin/bash -xe
+                          sed -i "s/peer/trust/g" /var/lib/pgsql/data/pg_hba.conf
+                          sed -i "s/ident/md5/g" /var/lib/pgsql/data/pg_hba.conf
+                          sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /var/lib/pgsql/data/postgresql.conf
+                          sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/data/postgresql.conf
+                          DBUser=$(aws ssm get-parameters --region ${AWS::Region} --names PostgresUser --query Parameters[0].Value | tr -d '"')
+                          echo "host all $DBUser 0.0.0.0/0 md5" >> /var/lib/pgsql/data/pg_hba.conf
+                        group: root
+                        mode: '000777'
+                        owner: postgres
+                    /tmp/create_user:
+                        content: !Sub |
+                          #!/bin/bash -xe
+                          DBUser=$(aws ssm get-parameters --region ${AWS::Region} --names PostgresUser --query Parameters[0].Value | tr -d '"')
+                          DBPassword=employee
+                          DBName=$(aws ssm get-parameters --region ${AWS::Region} --names PostgresDb --query Parameters[0].Value | tr -d '"')
+
+                          sudo -u postgres psql << EOF
+                          CREATE USER $DBUser with password '$DBPassword';
+                          CREATE DATABASE $DBName WITH OWNER $DBUser;
+                          EOF
+                        group: root
+                        mode: '000777'
+                        owner: postgres
+                commands:
+                    01_init_postgres_db:
+                        command: postgresql-setup initdb
+                        cwd: /var/lib/pgsql/data
+                    02_change_pg_hba.conf:
+                        command: /tmp/fix_pg_hba
+                        cwd: /var/lib/pgsql/data
+                    03_start_postgres_db:
+                        command: service postgresql start
+                    04_configure_postgres_user:
+                        command: /tmp/create_user
+                        cwd: /var/lib/pgsql/data
+
+    Properties: 
+      AvailabilityZone: !Select [0, !GetAZs '']
+      ImageId: !Ref InstanceAmiId
+      InstanceType: "{{resolve:ssm:Ec2InstanceType:1}}"
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !Ref KeyName
+      SecurityGroupIds: 
+          - !Ref EC2SecurityGroup
+      SubnetId: !ImportValue vpc-subnet-dba
+      Tags: 
+          - Key: Name
+            Value: Postgres-DB-Server
+      UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            yum update -y
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Ec2DbInstance --configsets db_install --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Ec2DbInstance --region ${AWS::Region}
+
+  EC2SecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            GroupDescription: 'Enable SSH TCP port 5432 for connecting to the postgres db server running in the private subnet'
+            SecurityGroupIngress:
+                - CidrIp: '0.0.0.0/0'
+                  Description: 'Allowing ssh from public domain'
+                  FromPort: 22
+                  IpProtocol: tcp
+                  ToPort: 22 
+                - CidrIp: '0.0.0.0/0'
+                  Description: 'Allowing connection to postgres port from public domain'
+                  FromPort: 5432
+                  IpProtocol: tcp
+                  ToPort: 5432
+            Tags: 
+                - Key: Name
+                  Value: Ec2-Postgres-Security-Group
+            VpcId: !ImportValue vpc
+
+Outputs: 
+    Ec2Instance:
+        Description: The Host URL for accessing postgres DB server
+        Value: !Join
+            - ':'
+            - - !GetAtt
+               - Ec2DbInstance
+               - PrivateDnsName
+              - '5432'
+        Export:
+          Name: postgres-hostname

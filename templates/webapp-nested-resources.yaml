@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+    A nested template for creating a Python Flask based webapp with postgres as a database.
+    This template creates a network template, natgateway template, SSM parameter template, postgresdb server template
+    and a flask based webapp instance template.
+    
+Parameters:
+
+  VpcName:
+      Description: Please enter the VPC name for the vpc being created
+      Type: String
+      Default: a4l-vpc1
+  
+  VpcCIDR:
+      Description: Please enter the ip range (CIDR notation) for this VPC
+      Type: String
+      Default: 10.16.0.0/16
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: "Name of an existing SSH Keypair to access the instance"
+    Default: keypair
+    MinLength: 1
+
+  InstanceAmiId:
+    Description: An ec2 instance AMI id
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2' 
+
+  InstanceType:
+      Type: String
+      Description: The instance type for the ec2 host
+      Default: "t2.micro"
+
+  FlaskApp:
+      Type: String
+      Default: microblog.py
+
+  PostgresUser:
+      Type: String
+      Default: employee_usr
+
+  PostgresDb:
+      Type: String
+      Default: employee_db
+
+  PostgresPwd:
+      Type: String
+      Default: employee
+      NoEcho: 'true'
+
+Resources:
+
+  SSMParameterStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+
+      Parameters:
+        InstanceType: !Ref InstanceType
+        FlaskApp: !Ref FlaskApp
+        PostgresUser: !Ref PostgresUser
+        PostgresDb: !Ref PostgresDb
+        PostgresPwd: !Ref PostgresPwd
+
+      TemplateURL: 
+        !Join
+        - ''
+        - - 'https://s3.'
+          - !Ref AWS::Region
+          - '.amazonaws.com/'
+          - !ImportValue s3-templates-bucket
+          - '/cloudformation-templates/'
+          - 'ssm-resources.yaml'
+
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: SSMParameterStack
+    Properties:
+
+      Parameters:
+        VpcName: !Ref VpcName
+        VpcCIDR: !Ref VpcCIDR
+
+      TemplateURL: 
+        !Join
+        - ''
+        - - 'https://s3.'
+          - !Ref AWS::Region
+          - '.amazonaws.com/'
+          - !ImportValue s3-templates-bucket
+          - '/cloudformation-templates/'
+          - 'network-resources.yaml'
+
+  NatGatewayStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: NetworkStack
+    Properties:
+
+      TemplateURL: 
+        !Join
+        - ''
+        - - 'https://s3.'
+          - !Ref AWS::Region
+          - '.amazonaws.com/'
+          - !ImportValue s3-templates-bucket
+          - '/cloudformation-templates/'
+          - 'natgw-resources.yaml'
+
+  PostgresDBInstanceStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: NatGatewayStack
+    Properties:
+
+      Parameters:
+        KeyName: !Ref KeyName
+        InstanceAmiId: !Ref InstanceAmiId
+
+      TemplateURL: 
+        !Join
+        - ''
+        - - 'https://s3.'
+          - !Ref AWS::Region
+          - '.amazonaws.com/'
+          - !ImportValue s3-templates-bucket
+          - '/cloudformation-templates/'
+          - 'postgres-db-resources.yaml'
+
+  WebappInstanceStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: PostgresDBInstanceStack
+    Properties:
+
+      Parameters:
+        KeyName: !Ref KeyName
+        InstanceAmiId: !Ref InstanceAmiId
+
+      TemplateURL: 
+        !Join
+        - ''
+        - - 'https://s3.'
+          - !Ref AWS::Region
+          - '.amazonaws.com/'
+          - !ImportValue s3-templates-bucket
+          - '/cloudformation-templates/'
+          - 'webapp-resources.yaml'

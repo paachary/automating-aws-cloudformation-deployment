@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+    A template to create an S3 bucket
+
+Parameters:
+  S3BucketName:
+    Description: Please enter the S3 Bucket Name where the children templates will be uploaded.
+    Type: String
+    Default: templates-bucket
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join
+        - "-"
+        - - !Ref S3BucketName
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - "/"
+                  - !Ref "AWS::StackId"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  ReadonlyBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket:
+        Ref: S3Bucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            Resource:
+              'Fn::Join':
+                - ''
+                - - 'arn:aws:s3:::'
+                  - Ref: S3Bucket
+                  - /*
+            Principal: '*'                        
+
+Outputs:
+  S3Bucket:
+    Description: Name of the S3 bucket created
+    Value: !Ref S3Bucket
+    Export: 
+      Name: s3-templates-bucket

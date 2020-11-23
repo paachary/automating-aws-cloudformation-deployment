@@ -1,0 +1,10 @@
+[
+    {
+      "ParameterKey": "VpcName",
+      "ParameterValue": "a4l-vpc1"
+    },
+    {
+      "ParameterKey": "VpcCIDR",
+      "ParameterValue": "10.16.0.0/16"
+    }
+]

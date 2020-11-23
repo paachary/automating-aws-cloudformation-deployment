@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  A template for creating a NAT gateway, Elastic public ip, a route table and a mapping
+
+Resources:
+
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+        Domain: vpc
+
+  NAT:
+    Type: AWS::EC2::NatGateway
+    Properties:
+        AllocationId:
+          Fn::GetAtt:
+          - EIP
+          - AllocationId
+        SubnetId: !ImportValue vpc-subnet-weba
+        Tags:
+        - Key: Name
+          Value: Nat-Gateway
+
+  VpcRouteTable:
+      Type: AWS::EC2::RouteTable
+      DependsOn: NAT
+      Properties: 
+        Tags: 
+          - Key: Name
+            Value: vpc-private-rt-A
+        VpcId: !ImportValue vpc        
+
+  Route:
+    Type: AWS::EC2::Route
+    Properties:
+        RouteTableId:
+          Ref: VpcRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId:
+          Ref: NAT
+
+  SubnetRoute1TableAssoc:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties: 
+          RouteTableId: !Ref VpcRouteTable
+          SubnetId: !ImportValue vpc-subnet-dba

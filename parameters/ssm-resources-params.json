@@ -1,0 +1,22 @@
+[
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "FlaskApp",
+        "ParameterValue": "microblog.py"
+    },
+    {
+        "ParameterKey": "PostgresUser",
+        "ParameterValue": "employee_usr"
+    },
+    {
+        "ParameterKey": "PostgresDb",
+        "ParameterValue": "employee_db"
+    },
+    {
+        "ParameterKey": "PostgresPwd",
+        "ParameterValue": "employee"
+    }
+]
