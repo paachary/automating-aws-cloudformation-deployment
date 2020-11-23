@@ -19,7 +19,7 @@ git clone https://github.com/paachary/automating-aws-cloudformation-deployment.g
 
 ## Execute the setup.sh script
           
-          $ cd automating-cloudformation-deployment 
+          $ cd automating-aws-cloudformation-deployment 
           $ sh setup.sh
           
     This script installs the python packages required for running the tasks successfully
@@ -30,7 +30,7 @@ git clone https://github.com/paachary/automating-aws-cloudformation-deployment.g
 
           Following tasks are available as a part of this repository:
           
-          $ cd automating-cloudformation-deployment 
+          $ cd automating-aws-cloudformation-deployment 
           $ . myenv/bin/activate
           
           $ pynt -l
