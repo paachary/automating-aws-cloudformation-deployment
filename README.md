@@ -15,7 +15,7 @@
 
 ## Clone this repostory
 
-git clone https://github.com/paachary/automating-cloudformation-deployment.git
+git clone https://github.com/paachary/automating-aws-cloudformation-deployment.git
 
 ## Execute the setup.sh script
           
