@@ -30,7 +30,6 @@ git clone https://github.com/paachary/automating-aws-cloudformation-deployment.g
 
           Following tasks are available as a part of this repository:
           
-          $ cd automating-aws-cloudformation-deployment 
           $ . myenv/bin/activate
           
           $ pynt -l
