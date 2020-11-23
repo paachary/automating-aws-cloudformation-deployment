@@ -124,7 +124,7 @@ Resources:
           - '.amazonaws.com/'
           - !ImportValue s3-templates-bucket
           - '/cloudformation-templates/'
-          - 'postgres-db-resources.yaml'
+          - 'nested-postgres-db-resources.yaml'
 
   WebappInstanceStack:
     Type: AWS::CloudFormation::Stack
@@ -143,4 +143,4 @@ Resources:
           - '.amazonaws.com/'
           - !ImportValue s3-templates-bucket
           - '/cloudformation-templates/'
-          - 'webapp-resources.yaml'
+          - 'nested-webapp-resources.yaml'

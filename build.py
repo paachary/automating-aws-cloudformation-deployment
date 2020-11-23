@@ -72,8 +72,8 @@ def _upload_children_template_files(stack):
     templates=[ "network-resources",
                 "natgw-resources",
                 "ssm-resources",
-                "postgres-db-resources",
-                "webapp-resources" ]
+                "nested-postgres-db-resources",
+                "nested-webapp-resources" ]
     for file in range(0, len(templates)):
         cfn_path = "templates/{}.yaml".format(templates[file])
         cfn_file = open(cfn_path, 'rb')
