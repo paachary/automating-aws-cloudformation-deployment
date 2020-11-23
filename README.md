@@ -2,7 +2,7 @@
 
           This example uses pynt, a lightweight python build tool, to execute tasks for creating and deleting CloudFormation templates.
           
-          The examples of CloudFormation templates include 
+          The examples of AWS CloudFormation templates include 
                     Individual Templates
                     Nested Templates
 
