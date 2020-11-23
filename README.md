@@ -101,4 +101,5 @@ git clone https://github.com/paachary/automating-cloudformation-deployment.git
 ### Regarding the source code, "build.py"
           This is the python code which gets invoked when "pynt" is executed on the command line.
           A function with "task" decorator is executed when the specific function is invoked using the following command:
-                    $ pynt create_nested_stack["webapp-nested-resources"]
+        
+          You can include your own tasks with dependencies across tasks and create your own automation deployment pipeline.
