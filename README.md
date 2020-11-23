@@ -44,6 +44,6 @@ git clone https://github.com/paachary/automating-cloudformation-deployment.git
           1. Login into the AWS Console
           
           2. Create a KeyPair in the EC2 (Elastic Compute) UI with the name "keypair".
-             Store the private part of the key-pair safely on your local machine.
+             Store the private portion of the key-pair safely on your local machine.
           
 
