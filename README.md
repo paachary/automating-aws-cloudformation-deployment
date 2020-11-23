@@ -45,5 +45,19 @@ git clone https://github.com/paachary/automating-cloudformation-deployment.git
           
           2. Create a KeyPair in the EC2 (Elastic Compute) UI with the name "keypair".
              Store the private portion of the key-pair safely on your local machine.
-          
+
+## Description of this repository's CloudFormation Templates
+
+### Nested Stack example
+
+          webapp-nested-resources -> Creates network-resources, natgw-resources, ssm-resources, postgres-db-resources, webapp-resources. 
+
+### Individual Stacks example
+
+         network-resources       -> Creates a custom VPC and its related resources [subnets, route tables, igw].
+         natgw-resources         -> Creates a nat gateway in one of the public subnets and an associated route table with a private subnet mapping.
+         ssm-resources           -> Creates required ssm parameters for postgres-db-resources and webapp-resouces template to use.
+         postgres-db-resources   -> Creates an ec2 instance with a postgres db hosted on it in a private subnet.
+         webapp-resources        -> Creates an ec2 instance with a python Flask webapp hosted on it in a public subnet.
+
 
