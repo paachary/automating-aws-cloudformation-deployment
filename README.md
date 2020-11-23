@@ -1,10 +1,10 @@
 #       Example of automating deployment of AWS CloudFormation templates
 
-          This example uses pynt, a lightweight python build tool, to execute tasks for creating and deleting CloudFormation templates.
+          This example uses pynt, a lightweight python build tool, to execute tasks for creating and deleting AWS CloudFormation templates.
           
-          The examples of AWS CloudFormation templates include 
+          The examples of AWS CloudFormation stacks include 
                     Individual Templates
-                    Nested Templates
+                    Nested Stack
 
 ## Pre-requirements for using this repository
 
