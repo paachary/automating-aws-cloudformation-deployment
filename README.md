@@ -1,6 +1,10 @@
-#       Example of automating execution of CloudFormation processes for individual stacks and nested stacks
+#       Example of automating deployment of CloudFormation templates
 
-          This example uses pynt, a lightweight python build tool, to execute tasks for creating and deleting CloudFormation templates
+          This example uses pynt, a lightweight python build tool, to execute tasks for creating and deleting CloudFormation templates.
+          
+          The examples of CloudFormation templates include 
+                    Individual Templates
+                    Nested Templates
 
 ## Pre-requirements for using this repository
 
