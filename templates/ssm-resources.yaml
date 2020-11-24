@@ -71,3 +71,15 @@ Resources:
       Description: Stores the postgres password
       Name: PostgresPwd
       SecretString: !Sub '"${PostgresPwd}"'
+
+  DbPassword:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: PostgresRdsDbSecretPwd
+      Description: "This secret has a dynamically generated secret password."
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "employee_usr"}'
+        GenerateStringKey: "password"
+        PasswordLength: 30
+        ExcludeCharacters: '"@/\'
+    

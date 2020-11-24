@@ -292,6 +292,26 @@ Resources:
         Properties: 
             RouteTableId: !Ref VpcRouteTable  
             SubnetId: !Ref SubnetWebC
+
+    EC2SecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+        GroupDescription: 'Enable SSH TCP port 8000 for connecting to the flask webapp running in the public subnet'
+        SecurityGroupIngress:
+            - CidrIp: '0.0.0.0/0'
+              Description: 'Allowing ssh from public domain'
+              FromPort: 22
+              IpProtocol: tcp
+              ToPort: 22 
+            - CidrIp: '0.0.0.0/0'
+              Description: 'Allowing connection to postgres port from public domain'
+              FromPort: 8000
+              IpProtocol: tcp
+              ToPort: 8000
+        Tags: 
+            - Key: Name
+              Value: Ec2-Postgres-Security-Group
+        VpcId: !ImportValue vpc            
 Outputs:      
     VPC:        
         Description: A reference to the created VPC        
@@ -358,3 +378,8 @@ Outputs:
         Value: !Ref SubnetWebC       
         Export:
             Name: vpc-subnet-webc    
+    WebappSecurityGroup:
+        Description: The security that needs to be attached to the ec2 instance running the webapp
+        Value: !Ref EC2SecurityGroup
+        Export:
+            Name: webapp-security-group

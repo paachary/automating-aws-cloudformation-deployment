@@ -175,13 +175,24 @@ Resources:
             VpcId: !ImportValue vpc
 
 Outputs: 
-    Ec2Instance:
-        Description: The Host URL for accessing the webapp server
-        Value: !Join
-            - ':'
-            - - !GetAtt
-               - Ec2WebappInstance
-               - PublicDnsName
-              - '8000'
-        Export:
-          Name: webapp
+  Ec2Instance:
+      Description: The Host URL for accessing the webapp server
+      Value: !Join
+          - ':'
+          - - !GetAtt
+              - Ec2WebappInstance
+              - PublicDnsName
+            - '8000'
+      Export:
+        Name: webapp
+
+  Ec2WebappSecurityGroup:
+      Description: The webapp security group
+      Value: !Join
+          - ':'
+          - - !GetAtt
+              - Ec2WebappInstance
+              - PublicDnsName
+            - '8000'
+      Export:
+        Name: webapp        
