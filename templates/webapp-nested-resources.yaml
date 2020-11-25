@@ -144,3 +144,8 @@ Resources:
           - !ImportValue s3-templates-bucket
           - '/cloudformation-templates/'
           - 'nested-webapp-resources.yaml'
+
+Outputs:
+  WebappEndPointURL:
+    Description: The webapp end point URL
+    Value: !ImportValue webapp

@@ -89,7 +89,27 @@ Resources:
                         postgresql-devel: []
                         postgresql-contrib: []
                         postgresql-docs: []
-
+                        jq: []
+              files:
+                /tmp/configure_env:
+                  content: !Sub |
+                    #!/bin/bash -xe
+                    rm -fr /usr/local/aws
+                    rm -fr /usr/local/bin/aws
+                    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+                    unzip awscli-bundle.zip
+                    ./awscli-bundle/install -b ~/bin/aws
+                    ln -fs /usr/bin/pip-3.7 /usr/bin/pip
+                    ln -fs /usr/bin/pip-3 /usr/bin/pip
+                    ln -fs /usr/bin/pip3 /usr/bin/pip
+                    aws configure set region `curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region`
+                  group: root
+                  mode: '000755'
+                  owner: ec2-user
+              commands:
+                01_configure_env:
+                    command: /tmp/configure_env
+                    cwd: "/home/ec2-user"
             configure_postgres:
                 files:
                     /tmp/fix_pg_hba:
@@ -108,7 +128,7 @@ Resources:
                         content: !Sub |
                           #!/bin/bash -xe
                           DBUser=$(aws ssm get-parameters --region ${AWS::Region} --names PostgresUser --query Parameters[0].Value | tr -d '"')
-                          DBPassword=employee
+                          DBPassword=$(aws secretsmanager get-secret-value --secret-id PostgresPwd | jq -r '.SecretString' | tr -d '"')
                           DBName=$(aws ssm get-parameters --region ${AWS::Region} --names PostgresDb --query Parameters[0].Value | tr -d '"')
 
                           sudo -u postgres psql << EOF
@@ -138,7 +158,7 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       KeyName: !Ref KeyName
       SecurityGroupIds: 
-          - !Ref EC2SecurityGroup
+          - !Ref PostgresSecurityGroup
       SubnetId: !ImportValue vpc-subnet-dba
       Tags: 
           - Key: Name
@@ -150,21 +170,16 @@ Resources:
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Ec2DbInstance --configsets db_install --region ${AWS::Region}
             /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Ec2DbInstance --region ${AWS::Region}
 
-  EC2SecurityGroup:
+  PostgresSecurityGroup:
         Type: AWS::EC2::SecurityGroup
         Properties: 
             GroupDescription: 'Enable SSH TCP port 5432 for connecting to the postgres db server running in the private subnet'
             SecurityGroupIngress:
-                - CidrIp: '0.0.0.0/0'
-                  Description: 'Allowing ssh from public domain'
-                  FromPort: 22
-                  IpProtocol: tcp
-                  ToPort: 22 
-                - CidrIp: '0.0.0.0/0'
-                  Description: 'Allowing connection to postgres port from public domain'
-                  FromPort: 5432
-                  IpProtocol: tcp
-                  ToPort: 5432
+              - SourceSecurityGroupId: !ImportValue webapp-security-group
+                Description: 'Allowing connection to postgres port from webapp security group'
+                FromPort: 5432
+                IpProtocol: tcp
+                ToPort: 5432
             Tags: 
                 - Key: Name
                   Value: Ec2-Postgres-Security-Group
