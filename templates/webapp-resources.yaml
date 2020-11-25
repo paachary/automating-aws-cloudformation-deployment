@@ -34,6 +34,7 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
         - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - "arn:aws:iam::aws:policy/SecretsManagerReadWrite"        
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -51,7 +52,7 @@ Resources:
           configSets:
             webapp_install:
               - install_cfn
-              - software_install
+              - software_install_n_configure
               - install_flask_webapp
               - configure_webapp
 
@@ -83,11 +84,32 @@ Resources:
                     - /etc/cfn/cfn-hup.conf
                     - /etc/cfn/hooks.d/cfn-auto-reloader.conf                        
 
-          software_install:
+          software_install_n_configure:
             packages:
               yum:
                 python3: []
                 git: []
+                jq: []
+            files:
+              /tmp/configure_env:
+                content: !Sub |
+                  #!/bin/bash -xe
+                  rm -fr /usr/local/aws
+                  rm -fr /usr/local/bin/aws
+                  curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+                  unzip awscli-bundle.zip
+                  ./awscli-bundle/install -b ~/bin/aws
+                  ln -fs /usr/bin/pip-3.7 /usr/bin/pip
+                  ln -fs /usr/bin/pip-3 /usr/bin/pip
+                  ln -fs /usr/bin/pip3 /usr/bin/pip
+                  aws configure set region `curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region`
+                group: root
+                mode: '000755'
+                owner: ec2-user
+            commands:
+              01_configure_env:
+                  command: /tmp/configure_env
+                  cwd: "/home/ec2-user"   
 
           install_flask_webapp:
             files:
@@ -97,10 +119,10 @@ Resources:
                   cd /home/ec2-user
                   git clone https://github.com/paachary/flask-app.git
                   cd /home/ec2-user/flask-app
-                  pip3 install install virtualenv
+                  pip install install virtualenv
                   virtualenv myenv
                   . myenv/bin/activate
-                  pip3 install -r requirements.txt
+                  pip install -r requirements.txt
                 group: root
                 mode: '000755'
                 owner: ec2-user
@@ -116,7 +138,7 @@ Resources:
                     #!/bin/bash -xe
                     . myenv/bin/activate
                     export POSTGRES_USER=$(aws ssm get-parameters --region ${AWS::Region} --names PostgresUser --query Parameters[0].Value | tr -d '"')
-                    export POSTGRES_PW=employee
+                    export POSTGRES_PW=$(aws secretsmanager get-secret-value --secret-id PostgresPwd | jq -r '.SecretString' | tr -d '"')
                     export POSTGRES_DB=$(aws ssm get-parameters --region ${AWS::Region} --names PostgresDb --query Parameters[0].Value | tr -d '"')                    
                     export FLASK_APP=$(aws ssm get-parameters --region ${AWS::Region} --names FlaskApp --query Parameters[0].Value | tr -d '"')
 
@@ -142,7 +164,7 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       KeyName: !Ref KeyName
       SecurityGroupIds: 
-          - !Ref EC2SecurityGroup
+          - !ImportValue webapp-security-group
       SubnetId: !ImportValue vpc-subnet-weba
       Tags: 
           - Key: Name
@@ -153,26 +175,6 @@ Resources:
             yum update -y
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Ec2WebappInstance --configsets webapp_install --region ${AWS::Region}
             /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Ec2WebappInstance --region ${AWS::Region}
-
-  EC2SecurityGroup:
-        Type: AWS::EC2::SecurityGroup
-        Properties: 
-            GroupDescription: 'Enable SSH TCP port 8000 for connecting to the flask webapp running in the public subnet'
-            SecurityGroupIngress:
-                - CidrIp: '0.0.0.0/0'
-                  Description: 'Allowing ssh from public domain'
-                  FromPort: 22
-                  IpProtocol: tcp
-                  ToPort: 22 
-                - CidrIp: '0.0.0.0/0'
-                  Description: 'Allowing connection to postgres port from public domain'
-                  FromPort: 8000
-                  IpProtocol: tcp
-                  ToPort: 8000
-            Tags: 
-                - Key: Name
-                  Value: Ec2-Postgres-Security-Group
-            VpcId: !ImportValue vpc
 
 Outputs: 
   Ec2Instance:
