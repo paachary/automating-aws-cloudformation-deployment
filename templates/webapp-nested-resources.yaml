@@ -145,7 +145,3 @@ Resources:
           - '/cloudformation-templates/'
           - 'nested-webapp-resources.yaml'
 
-Outputs:
-  WebappEndPointURL:
-    Description: The webapp end point URL
-    Value: !ImportValue webapp
