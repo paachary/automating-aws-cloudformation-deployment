@@ -142,7 +142,7 @@ Resources:
                     export POSTGRES_DB=$(aws ssm get-parameters --region ${AWS::Region} --names PostgresDb --query Parameters[0].Value | tr -d '"')                    
                     export FLASK_APP=$(aws ssm get-parameters --region ${AWS::Region} --names FlaskApp --query Parameters[0].Value | tr -d '"')
 
-                    flask db init
+                    flask db stamp head
                     flask db migrate -m "installing the db code"
                     flask db upgrade
                     gunicorn -b :8000 --access-logfile - --error-logfile - microblog:app --daemon
